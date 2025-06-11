@@ -10,18 +10,27 @@ def translate_audio_to_russian(audio_path):
 
     print("🔍 Распознавание речи (немецкий)...")
     model = whisper.load_model("medium")
+    # Что бы оставить текст в исходном виде без перевода, надо в task оставить transcribe
+    result_de = model.transcribe(audio_path, task="transcribe", language="de")
+    # А что бы перевести на английский необходимо указать task = translete
     result = model.transcribe(audio_path, task="translate", language="de")
+    deutche_text = result_de["text"]
     english_text = result["text"]
 
-    print("🌍 Перевод на русский...")
+    # Перевод на русский
     russian_text = GoogleTranslator(source='en', target='ru').translate(english_text)
-
+    # создаем пути сохранения файлов
     output_path = os.path.splitext(audio_path)[0] + "_translated_ru.txt"
+    output_path_de = os.path.splitext(audio_path)[0] + "_deutche.txt"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(russian_text)
 
+    with open(output_path_de, "w", encoding="utf-8") as f:
+        f.write(deutche_text)
+
     print(f"\n✅ Перевод завершён. Сохранено в: {output_path}")
     print("\n📄 Переведённый текст:\n")
+    print(deutche_text)
     print(russian_text)
 
 if __name__ == "__main__":
