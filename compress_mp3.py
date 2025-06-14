@@ -1,43 +1,59 @@
-import subprocess
-import os
-import sys
+import subprocess  # Для запуска внешних команд (ffprobe, ffmpeg)
+import os          # Для работы с файловой системой
+import sys         # Для доступа к аргументам командной строки
 
 def get_duration(filepath):
+    """
+    Получает длительность аудиофайла с помощью ffprobe.
+    Возвращает длительность в секундах (float).
+    """
     result = subprocess.run([
-        'ffprobe', '-i', filepath, '-show_entries', 'format=duration',
+        'ffprobe', '-i', filepath,
+        '-show_entries', 'format=duration',
         '-v', 'quiet', '-of', 'csv=p=0'
     ], capture_output=True, text=True)
 
     try:
-        return float(result.stdout.strip())
+        return float(result.stdout.strip())  # Преобразуем результат в число
     except ValueError:
-        print("❗ Не удалось определить длительность файла.")
-        return 0
+        return 0  # Возвращаем 0, если длительность не определена
 
 def process_audio(filepath):
+    """
+    Обрабатывает MP3-файл:
+    - Проверяет его длительность.
+    - Если длительность > 2 минут, обрезает до 90 секунд.
+    - Перекодирует в MP3 с битрейтом 96k.
+    """
     if not os.path.exists(filepath):
         print(f"Файл не найден: {filepath}")
         return
 
-    print(f"🔍 Проверка длительности файла: {filepath}")
     duration = get_duration(filepath)
 
-    # Если длительность больше 2 минут (120 сек) — обрезаем до 90 сек
-    temp_cut = filepath.replace(".mp3", "_cut.mp3")
-    if duration > 120:
-        print("✂️ Обрезка до 90 секунд...")
-        subprocess.run(['ffmpeg', '-y', '-i', filepath, '-t', '90', '-c', 'copy', temp_cut])
-    else:
-        temp_cut = filepath
+    # Если длительность больше 120 секунд — обрезаем до 90 секунд
+    needs_cut = duration > 120
+    temp_cut = filepath.replace(".mp3", "_cut.mp3") if needs_cut else filepath
 
-    output_clean = filepath.replace(".mp3", "_cleaned.mp3")
-    print("🎛 Перекодировка в нормальный MP3 (96k)...")
-    subprocess.run(['ffmpeg', '-y', '-i', temp_cut, '-b:a', '96k', output_clean])
+    if needs_cut:
+        subprocess.run([
+            'ffmpeg', '-y', '-i', filepath,
+            '-t', '90', '-c', 'copy', temp_cut
+        ])
 
-    print(f"✅ Готово: {output_clean}")
+    output_clean = filepath.replace(".mp3", "_cl.mp3")
+
+    # Перекодируем в 96 kbps MP3
+    subprocess.run([
+        'ffmpeg', '-y', '-i', temp_cut,
+        '-b:a', '96k', output_clean
+    ])
+
+    print(f"✅ Файл обработан: {output_clean}")
 
 if __name__ == "__main__":
+    # Проверяем, передан ли путь к файлу в аргументах
     if len(sys.argv) < 2:
-        print("❗ Использование: python compress_mp3.py путь_к_файлу.mp3")
+        print("Использование: python compress_mp3.py путь_к_файлу.mp3")
     else:
         process_audio(sys.argv[1])
