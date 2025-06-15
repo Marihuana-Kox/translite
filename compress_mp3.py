@@ -1,6 +1,5 @@
 import subprocess  # Для запуска внешних команд (ffprobe, ffmpeg)
 import os          # Для работы с файловой системой
-import sys         # Для доступа к аргументам командной строки
 
 def get_duration(filepath):
     """
@@ -50,10 +49,4 @@ def process_audio(filepath):
     ])
 
     print(f"✅ Файл обработан: {output_clean}")
-
-if __name__ == "__main__":
-    # Проверяем, передан ли путь к файлу в аргументах
-    if len(sys.argv) < 2:
-        print("Использование: python compress_mp3.py путь_к_файлу.mp3")
-    else:
-        process_audio(sys.argv[1])
+    return output_clean
